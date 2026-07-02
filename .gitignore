@@ -3,6 +3,11 @@ __pycache__/
 .DS_Store
 *.aux
 *.log
+*.blb
 *.bbl
-*.blg
 *.out
+*.fls*
+.syncthz*
+*.bak
+*cover_letter*
+*contribution_sheet*
