@@ -2,7 +2,7 @@
 
 **Causal Transformer: Scaling Gradient-Based Causal Discovery to 500 Variables**
 
-Submitted to *Machine Learning* (Springer), 2026.
+Submitted to *Scientific Reports*, 2026.
 
 ---
 

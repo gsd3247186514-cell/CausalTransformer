@@ -1,6 +1,6 @@
 """
 Phase D: Scaling Law Verification for Unified CDSM Paper
-Machine Learning (Springer) — Figure Generation
+Scientific Reports — Figure Generation
 Produces: unified phase diagram, scaling law fits, decision boundary map.
 """
 import json, os
