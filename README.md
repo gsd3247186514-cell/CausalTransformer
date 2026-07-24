@@ -120,8 +120,14 @@ Real cancer transcriptomic data used in this paper comes from the [UCSC Xena Bro
 @article{gao2026ct,
   title={Causal Transformer: Scaling Gradient-Based Causal Discovery to 500 Variables},
   author={Anonymous},
-  journal={Machine Learning},
+  journal={Scientific Reports},
   year={2026},
   note={Submitted}
 }
 ```
+
+---
+
+## Related Projects
+
+**[causalscale](https://github.com/sgao-academics/causalscale)** — A unified Python package with seven causal discovery engines under one API, scaling from $d=30$ to genome-wide ($d=17{,}787$). Causal Transformer is one of the engines integrated into causalscale. The package ships via PyPI (`pip install causalscale`) with pre-trained models on HuggingFace Hub.
