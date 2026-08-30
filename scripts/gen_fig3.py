@@ -1,5 +1,7 @@
 """Fig 3: CT ablation study at d=200, n=1000 (3 panels).
-Uses real data from D:/NO.1/_nightly/ct_results.json. Unified palette.
+
+Reads the real sweep results from ../data/ct_results.json (resolved relative to
+this script) and the unified palette (_ct_palette.py), so it runs on any machine.
 y-axis labeled with the paper's operability language (raw non-zero edges).
 """
 import os, sys, json, numpy as np
