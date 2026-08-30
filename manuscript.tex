@@ -38,7 +38,7 @@ Causal discovery---learning directed acyclic graphs (DAGs) from observational da
 
 Real data often sit at this scale: the median MAD-filtered expression dimensionality across the 33 TCGA types is 198 genes, so $d=200$ is routine \cite{sporns2005human,heckerman1997bayesian}. Whether an attention-based constructor of $W$ works here, and whether it yields interpretable structure, is unexamined.
 
-\textbf{Our contribution.} We introduce Causal Transformer (CT), which treats variables as tokens and learns causal edge weights from multi-head attention, decoding $W$ through a signed, unbounded map so that edge signs come from the decoder rather than the non-negative softmax. CT keeps NOTEARS' penalty $h(W)$ and is presented as an alternative attention-based DAG constructor, examined honestly.
+\textbf{Our contribution.} We introduce Causal Transformer (CT), which treats variables as tokens and learns causal edge weights from multi-head attention, decoding $W$ through a signed, unbounded map so that edge signs come from the decoder rather than the non-negative softmax. CT keeps NOTEARS' penalty $h(W)$ and is presented as an alternative attention-based DAG constructor.
 
 \begin{enumerate}
     \item \textbf{Architecture.} A variable-as-token encoder maps an $n\times d$ matrix to a $d\times d$ adjacency matrix via multi-head attention under the NOTEARS penalty. Heads specialize into nearly disjoint interaction patterns (inter-head Jaccard $0.17$); edge signs are assigned separately by a signed, unbounded decoder.
@@ -202,7 +202,7 @@ At $d=200$ raw non-zero counts jump to 538--1,028 ($n=1000$) and 49--632 ($n=500
 
 For a fair comparison we applied the official NOTEARS solver (\texttt{notears\_linear}; scipy L-BFGS) to the same DAGs and threshold grid as CT (Table~\ref{tab:baseline}). Official NOTEARS is stronger throughout the classical regime: $\mathrm{F1}=0.975$ at $d=50$, $0.981$ at $d=100$, and $0.993$ at $d=200$, $n=1000$ (all at $\tau=0.3$), against CT's $0.735$, $0.674$, and $0.759$. Under identical metrics CT does not outperform NOTEARS: the official solver recovers nearly all edges it is asked to. The earlier claim that NOTEARS ``collapses at $d\ge150$'' came from an under-converged torch/Adam implementation; the official L-BFGS solver does not show it. CT's interest is therefore architectural and exploratory.
 
-\textbf{Implication.} Official NOTEARS attains higher F1 at every configuration (best $0.993$ at $d=200$ vs.\ CT's $0.759$); CT does not surpass the standard baseline anywhere. This negative result is informative: an attention-based constructor of $W$, though trainable and able to recover edge direction and biologically plausible structure, does not yet match NOTEARS on linear SEM ground truth.
+\textbf{Implication.} Official NOTEARS attains higher F1 at every configuration (best $0.993$ at $d=200$ vs.\ CT's $0.759$); CT does not surpass the standard baseline anywhere. An attention-based constructor of $W$, though trainable and able to recover edge direction and biologically plausible structure, does not yet match NOTEARS on linear SEM ground truth.
 
 \subsection{Direction Recovery and the Causal-vs-Correlational Test}
 \label{sec:directional}
@@ -269,7 +269,7 @@ Unless stated otherwise, the ablation metrics report raw non-zero edge counts ($
 
 \subsection{How CT's Gradient Pathway Differs}
 
-Because each $W_{ij}$ is a function of the pooled attention, CT's gradient reaches all $d^2$ query--key pairs (architecture section). The practical ceiling is the $O(d^2)$ attention matrix and its gradient, which do not fit in 8~GB VRAM near $d=500$---a memory limit, not an algorithmic failure. The finding is not that CT is better, but that attention can build a trainable, interpretable DAG at $d=200$--$350$; whether it beats the standard solver on harder tests remains open.
+Because each $W_{ij}$ is a function of the pooled attention, CT's gradient reaches all $d^2$ query--key pairs (architecture section). The practical ceiling is the $O(d^2)$ attention matrix and its gradient, which do not fit in 8~GB VRAM near $d=500$---a memory limit, not an algorithmic failure. The contribution is not that CT outperforms NOTEARS, but that attention can construct a trainable, interpretable DAG at $d=200$--$350$; whether it exceeds the standard solver on harder tests remains open.
 
 \subsection{Limitations}\label{sec:limitations}
 
@@ -307,7 +307,7 @@ The author thanks the reviewers for their constructive feedback. No external fun
 
 \noindent\textbf{Code Availability.} All training scripts are available at \url{https://github.com/sgao-academics/CausalTransformer} under the MIT license.
 
-\noindent\textbf{Supplementary Information.} Additional methods (SM1--SM3), tables (S1--S7), figures (ESM Figs~1--2), and extended notes (SN1--SN23) are available as Electronic Supplementary Material (Online Resource 1).
+\noindent\textbf{Supplementary Information.} Additional methods (SM1--SM3), supplementary tables (S1--S18), figures (ESM Figs~1--2), and extended notes (SN1--SN25) are available as Electronic Supplementary Material (Online Resource 1).
 
 \bibliography{refs}
 
@@ -460,7 +460,7 @@ $d$ & $n$ & CT Edges & Time (s/seed) \\
 \newpage
 \begin{table}[H]
 \centering
-\caption{CT on 10 TCGA cancer types ($d=200$). Coherence is a \emph{biological-plausibility} proxy: the fraction of CT-selected edges whose two genes are co-expressed (Pearson $r > 0.4$) within at least one of 3 K-means clusters. Co-expression is a necessary-but-not-sufficient condition for causality, so coherence should not be read as causal precision (see Section~\ref{sec:std_metrics}). \textit{Complete results in ESM Table~S2.}}
+\caption{CT on 10 TCGA cancer types ($d=200$). Coherence is a \emph{biological-plausibility} proxy: the fraction of CT-selected edges whose two genes are co-expressed (Pearson $r > 0.4$) within at least one of 3 K-means clusters. Co-expression is a necessary-but-not-sufficient condition for causality, so coherence should not be read as causal precision (see Section~\ref{sec:std_metrics}). \textit{Complete results in ESM Table~S3.}}
 \label{tab:tcga_ct}
 \begin{tabular}{lrrc}
 \toprule

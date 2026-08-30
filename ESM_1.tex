@@ -16,6 +16,11 @@
 \hypersetup{hidelinks}
 \captionsetup{font=small,labelfont=bf}
 
+% Supplementary tables are labelled Table S1, S2, ... (Current Science style).
+\renewcommand{\thetable}{S\arabic{table}}
+% Supplementary figure labels are kept as ESM Figure 1, 2 (matching the main text).
+\renewcommand{\thefigure}{\arabic{figure}}
+
 \title{\textbf{Electronic Supplementary Material (ESM 1)}\\[0.5em]
 \large Causal Transformer: Scaling Gradient-Based Causal Discovery with Self-Attention}
 \author{Shuaidong Gao\\[0.3em]
@@ -30,7 +35,7 @@
 \pagestyle{plain}
 \pagenumbering{arabic}
 
-\noindent\textbf{Contents.} This document contains supplementary methods (SM1--SM3), supplementary tables (S1--S7), supplementary figures (ESM Figs~1--3), and extended supplementary notes (SN1--SN23) referenced in the main text.
+\noindent\textbf{Contents.} This document contains supplementary methods (SM1--SM3), supplementary tables (S1--S18), supplementary figures (ESM Figs~1--2), and extended supplementary notes (SN1--SN25) referenced in the main text.
 
 \vspace{1em}
 
@@ -74,7 +79,7 @@ The terminal layer of $g$ has no bounded activation (sigmoid or softmax), so $W$
 \subsection*{SM2. Cluster Coherence Analysis for TCGA Data}
 \label{sec:sm_coherence}
 
-To assess the biological relevance of CT-discovered edges on TCGA data (Table~4 in the main text), we compute within-cluster coherence. For each cancer type, we run K-means ($K=3$) on the top-200 genes. An edge $i \to j$ is considered ``coherent'' if the Pearson correlation between genes $i$ and $j$ exceeds 0.4 within at least one of the three clusters. The coherence rate is the fraction of CT edges meeting this criterion:
+To assess the biological relevance of CT-discovered edges on TCGA data (Table 7 in the main text), we compute within-cluster coherence. For each cancer type, we run K-means ($K=3$) on the top-200 genes. An edge $i \to j$ is considered ``coherent'' if the Pearson correlation between genes $i$ and $j$ exceeds 0.4 within at least one of the three clusters. The coherence rate is the fraction of CT edges meeting this criterion:
 \[
 \text{Coherence} = \frac{|\{ (i,j) : W_{ij} \neq 0 \text{ and } \max_k r_k(i,j) > 0.4 \}|}{|\{ (i,j) : W_{ij} \neq 0 \}|}
 \]
@@ -99,21 +104,9 @@ The seed offset formula is $\text{seed}(d, n) = 42 + d \cdot 100 + n \cdot 10$, 
 
 \section*{Supplementary Tables}
 
-% ── Table S1: 80-config sweep ──
-
-\newpage
-
-% ── Table S2: TCGA CT ──
-
-% ── Table S3: Ablation ──
-
-% ── Table S4: DAG validity ──
-
-% ── Table S5: Runtime ──
-
-% ── Table S6: Method comparison ──
-
-% ── Table S7: Acyclicity convergence ──
+% The supplementary tables (S1--S18) are placed at the end of this document,
+% after the bibliography, per the Current Science layout. They are numbered
+% automatically as Table S1, S2, ... via \renewcommand{\thetable}{S\arabic{table}}.
 
 % ═══════════════════════════════════════════════════════════════
 
@@ -148,7 +141,7 @@ Potential solutions include: (i) learned per-head softmax temperature $\tau_h$ t
 
 \subsection*{SN2. Attention Head Specialization Analysis}
 
-To assess whether CT's multi-head attention learns specialized edge patterns, we computed the pairwise Jaccard similarity between head-specific edge sets (edges with $|W_{ij}| > 10^{-3}$ per head) at $d=200$, $n=1000$ (d128\_h8\_e500). The mean pairwise Jaccard similarity across 8 heads is $0.17 \pm 0.08$, indicating substantial head specialization: the heads attend to largely disjoint sets of variable pairs, acting as complementary feature extractors rather than redundant copies. Because the softmax output $A^{(h)}$ is non-negative, the sign of an inferred edge is \emph{not} determined by any single head; it originates in the signed, unconstrained decoder $g$ of SM1 (Section~3). This decoupled design --- heads \emph{attend} to complementary pairs, the decoder \emph{assigns} sign and magnitude --- is reminiscent of how Transformer attention heads in NLP specialize in different syntactic relations~\cite{clark2019does}.
+To assess whether CT's multi-head attention learns specialized edge patterns, we computed the pairwise Jaccard similarity between head-specific edge sets (edges with $|W_{ij}| > 10^{-3}$ per head) at $d=200$, $n=1000$ (d128\_h8\_e500). The mean pairwise Jaccard similarity across 8 heads is $0.17 \pm 0.08$, indicating substantial head specialization: the heads attend to largely disjoint sets of variable pairs, acting as complementary feature extractors rather than redundant copies. Because the softmax output $A^{(h)}$ is non-negative, the sign of an inferred edge is \emph{not} determined by any single head; it originates in the signed, unconstrained decoder $g$ of SM1 (Section~3). This decoupled design --- heads \emph{attend} to complementary pairs, the decoder \emph{assigns} sign and magnitude --- parallels the head specialization observed in NLP Transformers~\cite{clark2019does}.
 
 \subsection*{SN3. GPU Memory Scaling Analysis}
 
@@ -571,15 +564,15 @@ $d$ & Time (s) & $O(d^2)$ Scale Factor \\
 \newpage
 \begin{table}[H]
 \centering
-\caption{\textbf{Comparison of causal discovery methods at $d=200$ ($n=1000$, 10 seeds).} ``DAG'' = enforces acyclicity constraint; ``Real data'' = tested on TCGA; ``---'' = inapplicable.}
+\caption{\textbf{Comparison of causal discovery methods at $d=200$ ($n=1000$, 10 seeds).} ``DAG'' = enforces acyclicity constraint; ``Real data'' = tested on TCGA; ``---'' = inapplicable. The NOTEARS row is the under-converged torch/Adam implementation of the original sweep (see the correction in SN6); the official L-BFGS solver is reported in the main text.}
 \label{tab:s_ct_comparison}
 \small
 \begin{tabular}{lcccc}
 \toprule
 Method & Edges & DAG & Real Data? & Time (s) \\
 \midrule
-NOTEARS & 0.0$\pm$0 & $\checkmark$ & No & 0 \\
-The cluster-gating method & 0.0$\pm$0 & $\checkmark$ & Yes & 0 \\
+NOTEARS (torch/Adam) & 0.0$\pm$0 & $\checkmark$ & No & 0 \\
+The cluster-gating method & 205$\pm$0 & $\checkmark$ & Yes & 408 \\
 CT (d128\_h8\_e500) & 1027.9$\pm$48 & $\checkmark$ & 10 cancers & 1,377 \\
 GENIE3 & 3,842 (top-1\%) & $\times$ & Yes & 218 \\
 ARACNE & 1,247 & $\times$ & Yes & 94 \\
