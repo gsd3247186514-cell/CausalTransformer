@@ -131,3 +131,60 @@ Real cancer transcriptomic data used in this paper comes from the [UCSC Xena Bro
 ## Related Projects
 
 **[causalscale](https://github.com/sgao-academics/causalscale)** — A unified Python package with seven causal discovery engines under one API, scaling from $d=30$ to genome-wide ($d=17{,}787$). Causal Transformer is one of the engines integrated into causalscale. The package ships via PyPI (`pip install causalscale`) with pre-trained models on HuggingFace Hub.
+
+---
+
+## Quick Reproduction (self-contained, one click)
+
+This repository is a **self-contained replication package**: every figure and table
+in the manuscript and the Electronic Supplementary Material is reproducible from
+the recorded benchmark results. All paths are resolved **relative to the scripts**,
+so the package runs on any machine after cloning/unzipping — no absolute paths.
+
+```bash
+# 1) create an isolated environment
+python -m venv .venv
+# Windows: .venv\Scripts\activate     Linux/macOS: source .venv/bin/activate
+
+# 2) install dependencies
+pip install -r requirements.txt
+
+# 3) regenerate all figures + compile the manuscript and ESM
+python run_all.py
+```
+
+`run_all.py` regenerates the four figures (`fig2_results`, `fig3_ablation`,
+`esm_fig1_scaling_law`, `esm_fig2_tcga_validation`) into `figures/`, then
+compiles `manuscript.tex` (pdflatex + bibtex) and `ESM_1.tex` into PDFs.
+If `pdflatex` is not on the system, it still regenerates all figures and skips
+only the PDF step.
+
+**No GPU required** — figures are drawn from `data/ct_results.json` and the
+recorded `results/` + `results_synth/` benchmark results. The original training
+used an RTX 5060 (8 GB) but is not rerun here, keeping the package fast and
+CPU-reproducible.
+
+### Figure / source mapping
+
+| Artifact | File | Reproduced by |
+|:--|:--|:--|
+| Fig 1 (architecture, TikZ) | inlined in `manuscript.tex` | `pdflatex manuscript.tex` |
+| Fig 2 (2x2 results) | `figures/fig2_results.pdf` | `scripts/gen_fig2.py` |
+| Fig 3 (1x3 ablation) | `figures/fig3_ablation.pdf` | `scripts/gen_fig3.py` |
+| ESM Fig 1 (scaling law) | `figures/esm_fig1_scaling_law.pdf` | `scripts/gen_esm_fig2.py` |
+| ESM Fig 2 (TCGA validation) | `figures/esm_fig2_tcga_validation.pdf` | `scripts/gen_esm_fig3.py` |
+
+### Generator dependencies
+
+Installed via `pip install -r requirements.txt`:
+
+```
+numpy>=1.26,<3
+matplotlib>=3.8,<4
+scipy>=1.11,<1.15
+pandas>=2.0,<3
+```
+
+Note: `torch` is only required if you re-run the model training itself
+(read-only reproduction uses only numpy/matplotlib). A TeX distribution
+(`pdflatex`, `bibtex`) is needed to build the manuscript/ESM PDFs.

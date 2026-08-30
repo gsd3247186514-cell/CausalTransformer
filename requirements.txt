@@ -1,5 +1,10 @@
-torch>=2.11
-numpy>=1.26
-matplotlib>=3.8
-pandas>=2.0
-scipy>=1.11
+# Python dependencies for the CT replication package.
+# Figure regeneration (run_all.py) uses numpy + matplotlib only.
+# torch is required ONLY if you re-run model training; it is optional here.
+#
+# Install:   pip install -r requirements.txt
+
+numpy>=1.26,<3
+matplotlib>=3.8,<4
+scipy>=1.11,<1.15
+pandas>=2.0,<3

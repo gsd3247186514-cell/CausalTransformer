@@ -1,165 +1,180 @@
+"""Fig 2 (main text, 2x2): Causal Transformer results overview.
+
+Panels (real data from this paper's own experiments):
+  (a) Operability window: CT raw non-zero edges vs d, with the mid-range dense
+      d^2 output and the official NOTEARS reference (61 edges, converges).
+  (b) Standard F1 under an identical edge-selection rule: official NOTEARS vs CT.
+  (c) Phase heatmap: max CT non-zero edges per (d, n) configuration.
+  (d) Activation curves across d at each sample size.
+
+This merges the former standalone "operability" (Fig 2) and "phase diagram"
+(ESM Fig S1) panels into a single 2x2 main-text figure, so the paper keeps at
+most five figures total. Unified high-end palette (see _ct_palette.py).
 """
-Phase D: Scaling Law Verification for Unified CDSM Paper
-Scientific Reports — Figure Generation
-Produces: unified phase diagram, scaling law fits, decision boundary map.
-"""
-import json, os
-import numpy as np
+import os, sys, json, numpy as np
+sys.path.insert(0, os.path.dirname(__file__))
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter, LogLocator
-from scipy.optimize import curve_fit
-from scipy import stats
+import matplotlib.colors as mcolors
+from matplotlib.colors import LogNorm
+import _ct_palette as P
+
+P.apply_style()
+
+# --- Reproducibility: resolve paths relative to THIS script, so the package
+#     runs on any machine after unzip. data/ and figures/ sit one level up. ---
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(_HERE)
+_DATAP = os.path.join(_ROOT, 'data', 'ct_results.json')
+_FIGP  = os.path.join(_ROOT, 'figures')
+if not os.path.isfile(_DATAP):
+    raise FileNotFoundError(f'Missing data file: {_DATAP}')
+os.makedirs(_FIGP, exist_ok=True)
+
+data = json.load(open(_DATAP))
+
+# best edges per (d, n)
+grid = {}
+for k, v in data.items():
+    key = (v['d'], v['n'])
+    e = v['ct_edges']
+    if key not in grid or e > grid[key]:
+        grid[key] = e
+
+d_list = sorted({v['d'] for v in data.values()})   # [30, 50, 100, 200]
+n_list = sorted({k[1] for k in grid})              # [200, 500, 1000]
+
+def best_edges(d, n):
+    return grid.get((d, n), np.nan)
+
+fig, axes = plt.subplots(2, 2, figsize=(13.0, 9.6))
+ax_a, ax_b, ax_c, ax_d = axes[0, 0], axes[0, 1], axes[1, 0], axes[1, 1]
 
 # ============================================================
-# DATA LOADING
+# (a) Operability window: CT non-zero edges vs d
 # ============================================================
+for n, color, marker in [(500, P.CT, 'o'), (1000, P.NOT, 's')]:
+    ys = [best_edges(d, n) for d in d_list]
+    ax_a.plot(d_list, ys, marker=marker, markersize=7.0, linewidth=2.2,
+              color=color, label=f'CT (n = {n})', zorder=4,
+              markeredgecolor='white', markeredgewidth=1.0)
 
-# 1. CT 80-config sweep (has true_edges, ct_edges at various d,n)
-ct_path = '../data/ct_results.json'
-with open(ct_path) as f:
-    ct_raw = json.load(f)
+mid_d = [250, 300, 350]
+mid_edges = [d * d for d in mid_d]
+ax_a.scatter(mid_d, mid_edges, marker='^', s=72, color=P.CT, zorder=5,
+             edgecolor='white', linewidth=1.0, label='TCGA $d>200$ (dense)')
 
-ct_data = []
-for key, val in ct_raw.items():
-    d = int(val['d'])
-    n = int(val['n'])
-    true_edges = float(val.get('true_edges', 0))
-    ct_edges = float(val.get('ct_edges', 0))
-    strategy = val.get('strategy', '')
-    ct_data.append({'d': d, 'n': n, 'true_edges': true_edges, 'ct_edges': ct_edges, 'strategy': strategy})
+ax_a.axhline(y=61, color=P.NOT, linestyle='--', linewidth=1.5, zorder=3)
+ax_a.text(212, 70, 'NOTEARS (official) $d{=}200$:\nconverges, 61 edges',
+          fontsize=6.8, color=P.NOT, va='bottom', ha='left')
 
-print(f"CT data: {len(ct_data)} configs")
-print(f"  d range: {sorted(set(r['d'] for r in ct_data))}")
-print(f"  n range: {sorted(set(r['n'] for r in ct_data))}")
+ax_a.axvspan(130, 230, color='#F2F7FC', alpha=0.85, zorder=1)
+ax_a.axvline(x=200, color=P.CT, linestyle=':', linewidth=1.5, zorder=2)
+ax_a.text(0.985, 0.05, 'CT activation $d \\approx 200$',
+          transform=ax_a.transAxes, fontsize=8, fontweight='bold',
+          color=P.CT, va='bottom', ha='right')
+ax_a.annotate('near-zero edges', xy=(100, best_edges(100, 500)),
+              xytext=(34, 900), fontsize=6.8, color=P.GRAY, ha='left',
+              arrowprops=dict(arrowstyle='->', color=P.GRAY, lw=1.1))
 
-# 2. SSCAGate / CAGate TCGA data at d=200 (has notears_mean, sscagate_mean, cagate_mean)
-tcga200_path = '../data/tcga_d200_10seed.json'
-with open(tcga200_path) as f:
-    tcga200 = json.load(f)
-
-tcga200_data = {}
-for cancer, val in tcga200.items():
-    d_used = val.get('d_used', val.get('d', 200))
-    n = val.get('n', 0)
-    notears_mean = val.get('notears_mean', 0)
-    sscagate_mean = val.get('sscagate_mean', 0)
-    cagate_mean = val.get('cagate_mean', 0)
-    tcga200_data[cancer] = {'d': d_used, 'n': n, 'notears': notears_mean, 'sscagate': sscagate_mean, 'cagate': cagate_mean}
-
-# 3. mega_33 at d=100 (has cagate and sscagate)
-mega_path = '../data/mega_33_full.json'
-with open(mega_path) as f:
-    mega = json.load(f)
-
-mega_data = {}
-for cancer, val in mega.items():
-    d = val.get('d', 100)
-    n = val.get('n', 0)
-    cagate_gate = val.get('cagate_gate_mean', 0)
-    sscagate_success = val.get('sscagate_success', None)
-    winner = val.get('winner', '')
-    mega_data[cancer] = {'d': d, 'n': n, 'cagate_gate': cagate_gate, 'sscagate': sscagate_success, 'winner': winner}
-
-print(f"\nmega_33: {len(mega_data)} cancers at d=100")
-print(f"tcga200: {len(tcga200_data)} cancers at d=200")
-print(f"  Sample NOTEARS at d=200: {[(k, v['notears']) for k,v in list(tcga200_data.items())[:3]]}")
+ax_a.set_xscale('log'); ax_a.set_yscale('log')
+ax_a.set_xlim(28, 380); ax_a.set_ylim(1, 9e5)
+ax_a.set_xlabel('Dimensionality ($d$)', fontweight='bold')
+ax_a.set_ylabel('Raw non-zero edges', fontweight='bold')
+ax_a.set_title('(a) Operability window', fontweight='bold', loc='left')
+ax_a.legend(fontsize=7.4, loc='upper left', framealpha=0.92)
+ax_a.grid(True, which='major', color='#D9DDE2', linewidth=0.7)
+ax_a.grid(True, which='minor', color='#EDEFF2', linewidth=0.5)
+ax_a.spines[['top', 'right']].set_visible(False)
+ax_a.set_axisbelow(True)
 
 # ============================================================
+# (b) Standard F1: CT vs official NOTEARS (identical edge rule)
 # ============================================================
-print("\n=== FIGURE 3: Decision Boundary Map ===")
+d_f1 = [50, 100, 200]
+note_f1 = [0.975, 0.981, 0.993]
+ct_f1 = [0.735, 0.674, 0.759]
+x = np.arange(len(d_f1))
+w = 0.34
+ax_b.bar(x - w/2, note_f1, w, color=P.NOT, label='NOTEARS (official)', zorder=3,
+         edgecolor='white', linewidth=0.6)
+ax_b.bar(x + w/2, ct_f1, w, color=P.CT, label='CT (this work)', zorder=3,
+         edgecolor='white', linewidth=0.6)
+for xi, v in zip(x - w/2, note_f1):
+    ax_b.text(xi, v + 0.015, f'{v:.3f}', ha='center', va='bottom',
+              fontsize=7.6, fontweight='bold')
+for xi, v in zip(x + w/2, ct_f1):
+    ax_b.text(xi, v + 0.015, f'{v:.3f}', ha='center', va='bottom',
+              fontsize=7.6, fontweight='bold')
+ax_b.set_xticks(x); ax_b.set_xticklabels([f'd = {d}' for d in d_f1])
+ax_b.set_ylim(0, 1.18)
+ax_b.set_ylabel('Best standard F1', fontweight='bold')
+ax_b.set_title('(b) Standard recovery: NOTEARS is stronger',
+               fontweight='bold', loc='left')
+ax_b.legend(fontsize=7.6, loc='lower right', framealpha=0.92)
+ax_b.grid(axis='y', color='#D9DDE2', linewidth=0.7)
+ax_b.spines[['top', 'right']].set_visible(False)
+ax_b.set_axisbelow(True)
 
-fig, ax = plt.subplots(figsize=(9, 6.5))
+# ============================================================
+# (c) Phase heatmap: max CT edges per (d, n)
+# ============================================================
+d_vals = sorted({k[0] for k in grid})
+n_vals = sorted({k[1] for k in grid})
+matrix = np.zeros((len(d_vals), len(n_vals)))
+for i, d in enumerate(d_vals):
+    for j, n in enumerate(n_vals):
+        matrix[i, j] = grid.get((d, n), 0)
 
-# Define regimes
-d_range = np.logspace(np.log10(20), np.log10(600), 200)
-n_range = np.logspace(np.log10(30), np.log10(5000), 200)
-D, N = np.meshgrid(d_range, n_range)
+vmin = max(matrix[matrix > 0].min(), 0.1)
+cmap = mcolors.LinearSegmentedColormap.from_list('ct_blue', ['#FFFFFF', P.CT])
+im = ax_c.imshow(matrix, aspect='auto', cmap=cmap,
+                 norm=LogNorm(vmin=vmin, vmax=matrix.max()))
+ax_c.set_xticks(range(len(n_vals))); ax_c.set_xticklabels([str(n) for n in n_vals])
+ax_c.set_yticks(range(len(d_vals))); ax_c.set_yticklabels([str(d) for d in d_vals])
+ax_c.set_xlabel('n (samples)', fontweight='bold')
+ax_c.set_ylabel('d (variables)', fontweight='bold')
+cbar = plt.colorbar(im, ax=ax_c, shrink=0.82)
+cbar.set_label('Max CT edges', fontweight='bold')
+for i in range(len(d_vals)):
+    for j in range(len(n_vals)):
+        v = matrix[i, j]
+        if v > 0:
+            col = 'white' if v > vmin * (matrix.max()/vmin) ** 0.6 else 'black'
+            ax_c.text(j, i, f'{v:.0f}', ha='center', va='center',
+                      fontsize=7.2, color=col)
+ax_c.set_title('(c) Phase: max CT edges per $(d, n)$',
+               fontweight='bold', loc='left')
+ax_c.grid(False)
 
-# Compute which method works at each (d,n)
-# 0=NOTEARS, 1=CAGate, 2=SSCAGate, 3=CT, 4=None/Infeasible
-regime = np.full_like(D, 4, dtype=int)
+# ============================================================
+# (d) Activation curves across d at each n
+# ============================================================
+colors = P.blue_ramp(len(n_vals))[::-1]
+for j, n in enumerate(n_vals):
+    ys = [grid.get((d, n), 0) for d in d_vals]
+    ax_d.plot(d_vals, ys, 'o-', color=colors[j], label=f'n = {n}',
+              markersize=6.2, linewidth=2.2, markeredgecolor='white',
+              markeredgewidth=0.8)
+ax_d.set_xlabel('d (variables)', fontweight='bold')
+ax_d.set_ylabel('Max CT edges', fontweight='bold')
+ax_d.legend(fontsize=7.6, loc='upper left', framealpha=0.92)
+ax_d.set_ylim(bottom=-30)
+ax_d.axhline(y=1, color=P.GRAY, linestyle='--', linewidth=0.9, alpha=0.6)
+ax_d.annotate('CT activates\n($d \\geq 200$)', xy=(200, grid.get((200, 1000), 500)),
+              xytext=(95, 880), fontsize=7.4, color=P.CT, fontweight='bold',
+              arrowprops=dict(arrowstyle='->', color=P.CT, lw=1.4))
+ax_d.set_title('(d) Activation across $d$', fontweight='bold', loc='left')
+ax_d.grid(True, color='#D9DDE2', linewidth=0.7)
+ax_d.spines[['top', 'right']].set_visible(False)
+ax_d.set_axisbelow(True)
 
-# CT regime: d >= 200 AND n >= 300*(d/200)^0.5
-ct_mask = (D >= 200) & (N >= 300 * (D/200)**0.5)
-regime[ct_mask] = 3
+fig.suptitle('Causal Transformer: operability, accuracy, and phase behaviour',
+             fontsize=13, fontweight='bold', y=0.995)
+fig.tight_layout(rect=[0, 0, 1, 0.973])
 
-# SSCAGate regime: d < 200 AND n >= 6.27 * d^0.902
-sscagate_mask = (D < 200) & (N >= 6.27 * D**0.902) & (~ct_mask)
-regime[sscagate_mask] = 2
-
-# CAGate regime: d < 200, n between CAGate and SSCAGate thresholds
-cagate_mask = (D < 200) & (N >= 4.5 * D**0.95) & (N < 6.27 * D**0.902) & (~ct_mask)
-regime[cagate_mask] = 1
-
-# NOTEARS regime: d < 150, n above NOTEARS threshold
-notears_mask = (D < 150) & (N >= 2.0 * D**1.1) & (N < 4.5 * D**0.95) & (~ct_mask)
-regime[notears_mask] = 0
-
-# Plot regimes
-cmap = matplotlib.colors.ListedColormap(['#F44336', '#4CAF50', '#FF9800', '#2196F3', '#EEEEEE'])
-bounds = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
-norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-im = ax.pcolormesh(D, N, regime, cmap=cmap, norm=norm, alpha=0.6, shading='auto')
-
-# Add boundary lines
-# CT boundary
-d_ct = np.linspace(200, 500, 100)
-n_ct = 300 * (d_ct/200)**0.5
-ax.plot(d_ct, n_ct, '-', color='#2196F3', linewidth=2.5, label='CT Activation Boundary')
-
-# SSCAGate boundary
-d_ss = np.linspace(30, 200, 100)
-n_ss = 6.27 * d_ss**0.902
-ax.plot(d_ss, n_ss, '-', color='#FF9800', linewidth=2.5, label='SSCAGate Phase Boundary')
-
-# CAGate boundary
-n_cg = 4.5 * d_ss**0.95
-ax.plot(d_ss, n_cg, '--', color='#4CAF50', linewidth=1.5, alpha=0.8, label='CAGate Threshold')
-
-# NOTEARS boundary
-d_nt = np.linspace(10, 150, 100)
-n_nt = 2.0 * d_nt**1.1
-ax.plot(d_nt, n_nt, ':', color='#F44336', linewidth=1.5, alpha=0.8, label='NOTEARS Viability Limit')
-
-# d=150 death line
-ax.axvline(x=150, color='red', linestyle='--', linewidth=1, alpha=0.4)
-ax.text(148, 35, 'NOTEARS\nDeath Line', fontsize=7, color='red', alpha=0.5, ha='right')
-
-# Label regimes
-ax.text(80, 100, 'NOTEARS', fontsize=14, fontweight='bold', color='#C62828',
-        ha='center', va='center', alpha=0.7)
-ax.text(90, 1200, 'SSCAGate', fontsize=16, fontweight='bold', color='#E65100',
-        ha='center', va='center', alpha=0.7)
-ax.text(350, 800, 'Causal\nTransformer', fontsize=16, fontweight='bold', color='#0D47A1',
-        ha='center', va='center', alpha=0.7)
-ax.text(350, 80, 'Infeasible\n(Need >8GB VRAM)', fontsize=9, color='gray',
-        ha='center', va='center', fontstyle='italic')
-
-# TCGA data points (d=200) — white star = real cancer dataset position
-tcga_d = [v['d'] for v in tcga200_data.values() if v['n']>0]
-tcga_n = [v['n'] for v in tcga200_data.values() if v['n']>0]
-ax.scatter(tcga_d, tcga_n, marker='*', s=80, color='white', zorder=10,
-          edgecolors='black', linewidths=0.5)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-ax.set_xlim(20, 600)
-ax.set_ylim(30, 5000)
-ax.set_xlabel('Dimensionality (d)', fontsize=12, fontweight='bold')
-ax.set_ylabel('Sample Size (n)', fontsize=12, fontweight='bold')
-ax.set_title('CDSM Decision Boundary Map\nWhich Method at What (d, n)?', fontsize=13, fontweight='bold')
-ax.legend(fontsize=8.5, loc='upper left', framealpha=0.9)
-ax.grid(True, alpha=0.2)
-
-plt.tight_layout(pad=1.0)
-fig.savefig('../figures/fig2_decision_boundary.png',
-            dpi=300, bbox_inches='tight', pad_inches=0.05)
-fig.savefig('../figures/fig2_decision_boundary.pdf',
-            bbox_inches='tight', pad_inches=0.05)
-print("  Saved: fig2_decision_boundary.png/pdf")
+out = os.path.join(_FIGP, 'fig2_results')
+P.save(fig, out)
 plt.close()
-
-# ============================================================
-# FIGURE 4: TCGA Validation — Real Data Confirms the Phase Diagram
+print('fig2_results done.')
