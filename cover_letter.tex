@@ -1,0 +1,93 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+\begin{document}
+
+\begin{flushright}
+Shuaidong Gao\\
+Chongqing Institute of Foreign Studies\\
+Qijiang Campus, Chongqing 401420, China\\
+\texttt{gaoshuaidong@stu.cqifs.edu.cn}\\
+ORCID: 0009-0004-5641-3581\\
+Telephone: +86 158 3005 5197\\
+Institution Telephone: 023-87260560\\
+\today
+\end{flushright}
+
+\vspace{1cm}
+
+\noindent\textbf{The Editor}\\
+Current Science\\
+Indian Academy of Sciences, Bengaluru\\
+Via E-mail
+
+\vspace{0.6cm}
+
+\noindent\textbf{Dear Editor,}
+
+\vspace{0.3cm}
+
+I am submitting my manuscript \textbf{``Causal Transformer: Scaling Gradient-Based Causal Discovery with Self-Attention''} for consideration as a research article in \textit{Current Science}. This manuscript is original: it has not been published previously, and it is not under consideration by any other journal.
+
+\vspace{0.3cm}
+
+NOTEARS (Zheng et al., 2018) is the most widely used differentiable causal discovery framework. It optimizes each edge weight independently, so the cost of training grows steeply with the number of variables. Most real transcriptomic and neuroimaging datasets sit at $d = 200$--$500$, a range where training NOTEARS cost is high and, under the gradient-based workflows commonly used in practice, an adequate sparse solution is not reliably obtained. My paper examines whether multi-head self-attention---which constructs the adjacency matrix from interactions across all variable pairs rather than from independent edge parameters---can serve as an alternative, and measures this on standard metrics.
+
+\vspace{0.3cm}
+
+Causal Transformer (CT) treats variables as tokens and learns causal edges from multi-head attention weights, retaining the acyclicity constraint but replacing independent parameter optimization with attention-based $W$ construction. Across 335 experiments---80 synthetic configurations, 15 TCGA real-data seeds at $d=250$--$350$, 15 multi-omics seeds, and extended comparisons with GOLEM and DAGMA---CT is a trainable, attention-based DAG constructor at $d \ge 200$ on a consumer GPU (RTX 5060, 8~GB). At $d=200$ on 10 cancer types its top-hub genes are 75\% ClinGen Tier-1 cancer drivers, and it recovers edge direction ($86\%$). On standard metrics we report that the official NOTEARS solver attains higher F1 in the classical regime; CT's contribution is architectural (attention as a DAG constructor) and its real-data output shows biological plausibility rather than a claim of superior accuracy.
+
+\vspace{0.3cm}
+
+I believe the work is well suited to \textit{Current Science} because it addresses a methodological gap in machine learning with immediate relevance to large-scale biological data, a core interest of the journal's readership. The manuscript is prepared double-spaced with a {\textless}100-word abstract, five keywords, and superscript-numbered references, as required.
+
+\vspace{0.3cm}
+
+\textbf{Preprint.} This work was posted as a preprint on SSRN (DOI: \url{https://doi.org/10.2139/ssrn.7107958}) prior to submission. In line with \textit{Current Science}'s preprint policy, I hereby declare this preprint and confirm that, upon acceptance, its DOI will be linked to the published journal version.
+
+\vspace{0.3cm}
+
+\textbf{Importance of the work (100 words).} High-dimensional observational data---gene expression, neuroimaging---routinely reach $d=200$--$500$ variables, beyond classical causal discovery. NOTEARS recasts DAG learning as continuous optimization, but its $O(d^3)$ acyclicity cost grows steeply with dimension. This work asks whether multi-head self-attention can construct the causal adjacency matrix directly, letting each edge be informed by interactions across all variable pairs rather than optimized independently. The resulting Causal Transformer remains trainable at $d\ge200$ on consumer hardware and recovers biologically plausible structure on TCGA data, offering an interpretable, architecture-driven alternative for large-scale causal discovery.
+
+\vspace{0.3cm}
+
+\textbf{Competing interests.} A Chinese patent application covering cluster-aware causal discovery (including the Causal Transformer extension) has been filed. The author declares no other competing interests. Complete replication materials---all figure-generation scripts, 335 benchmark JSON files, and pre-compiled figures---are available at \url{https://github.com/sgao-academics/CausalTransformer}.
+
+\vspace{0.3cm}
+
+\textbf{Suggested reviewers.} The following experts would be well placed to assess the work:
+
+\vspace{0.5em}
+
+\begin{tabular}{@{}p{3.5cm}p{3.5cm}p{3.6cm}p{3.6cm}@{}}
+\toprule
+\textbf{Name} & \textbf{Institution} & \textbf{Email} & \textbf{Expertise} \\
+\midrule
+Ignavier Ng
+  & University of Toronto
+  & \texttt{ignavier.ng@outlook.com}
+  & Differentiable causal discovery; NOTEARS variants \\[6pt]
+S\'ebastien Lachapelle
+  & Mila / Universit\'e de Montr\'eal
+  & \texttt{lachaseb@mila.quebec}
+  & Gradient-based DAG learning; acyclicity optimization \\[6pt]
+Biwei Huang
+  & University of California, San Diego
+  & \texttt{bih007@ucsd.edu}
+  & Causal representation learning; causal discovery \\
+\bottomrule
+\end{tabular}
+
+\vspace{1em}
+\noindent All three are cited in this manuscript, have no institutional conflict with the author, and span the areas of differentiable causal discovery, gradient-based DAG learning, and causal representation learning.
+
+\vspace{1cm}
+
+\noindent Sincerely,\\
+\vspace{0.3cm}
+\noindent Shuaidong Gao
+
+\end{document}

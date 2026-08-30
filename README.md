@@ -1,8 +1,8 @@
 # Causal Transformer (CT)
 
-**Causal Transformer: Scaling Gradient-Based Causal Discovery to 500 Variables**
+**Causal Transformer: Scaling Gradient-Based Causal Discovery with Self-Attention**
 
-Submitted to *Scientific Reports*, 2026.
+Submitted to *Current Science*, 2026.
 
 ---
 
@@ -10,7 +10,7 @@ Submitted to *Scientific Reports*, 2026.
 
 Causal Transformer (CT) is a self-attention architecture for differentiable causal discovery at $d \geq 200$. It treats variables as tokens and learns causal edge strengths from multi-head attention weights, retaining NOTEARS' acyclicity constraint but constructing $W$ through attention rather than independent parameter optimization.
 
-**Key result:** CT produces 1,028 edges at $d=200$ where NOTEARS returns exactly 0. On 10 TCGA cancer types, 75% of CT-discovered top-hub genes are ClinGen Tier-1 cancer drivers. CT extends DAG-based causal discovery to the frontier of $d \approx 500$, all on consumer hardware (RTX 5060, 8 GB).
+**Key result:** On standard metrics, the official NOTEARS solver attains higher F1 in the classical regime ($d \lesssim 200$; F1 = 0.98--0.99), so CT's contribution is architectural: under the NOTEARS acyclicity penalty, attention constructs a signed, unbounded adjacency matrix so that spikes remain trainable at $d \ge 200$--$500$ on a consumer GPU (RTX 5060, 8 GB). Its heads specialize into nearly disjoint variable-pair patterns (inter-head Jaccard 0.17), and on 10 TCGA cancer types at $d=200$ the recovered edges enrich in cancer-relevant genes (75% of top hubs are ClinGen Tier-1 drivers), indicating biological plausibility.
 
 ---
 
@@ -35,8 +35,8 @@ Causal Transformer (CT) is a self-attention architecture for differentiable caus
 
 ### Prerequisites
 - Python 3.12+
-- PyTorch 2.11+ with CUDA 12.8+
-- NVIDIA GPU with $\geq$ 8 GB VRAM
+- matplotlib >= 3.8, numpy, scipy, pandas (for figure regeneration — no GPU needed)
+- A TeX distribution (`pdflatex`, `bibtex`) to build the manuscript/ESM PDFs
 - Windows / Linux / macOS
 
 ### 1. Install
@@ -44,28 +44,23 @@ Causal Transformer (CT) is a self-attention architecture for differentiable caus
 pip install -r requirements.txt
 ```
 
-### 2. Regenerate all figures
+### 2. Regenerate all figures + build the manuscript (one click)
 ```bash
-cd scripts/
-python gen_fig1.py                 # Architecture diagram
-python gen_fig2.py                 # Decision boundary map
-python gen_fig3.py                 # Ablation study
-python gen_graphical_abstract.py   # Graphical abstract
-python gen_esm_fig1.py             # Phase diagram (ESM)
-python gen_esm_fig2.py             # Scaling law fits (ESM)
-python gen_esm_fig3.py             # TCGA validation (ESM)
+python run_all.py
 ```
 
-Outputs:
-- `../figures/fig1_architecture.pdf` — matches manuscript Figure 1
-- `../figures/fig2_decision_boundary.pdf` — matches manuscript Figure 2
-- `../figures/fig3_ablation.pdf` — matches manuscript Figure 3
-- `../figures/esm_fig1_phase_diagram.pdf` — matches ESM Figure 1
-- `../figures/esm_fig2_scaling_law.pdf` — matches ESM Figure 2
-- `../figures/esm_fig3_tcga_validation.pdf` — matches ESM Figure 3
-- `../figures/fig_ga_graphical_abstract.pdf` — graphical abstract
+`run_all.py` regenerates the four plotted figures (Fig 1 is an inline TikZ diagram in the manuscript, so it is drawn at compile time) and then compiles `manuscript.tex` (pdflatex + bibtex) and `ESM_1.tex` into PDFs. If `pdflatex` is not on the system, it still regenerates all figures and skips only the PDF step.
 
-Expected total runtime: $\sim$ 8 minutes (most time is `gen_fig2.py` and `gen_esm_fig2.py`, which load and fit 80-configuration sweep data; no re-training required).
+Individual scripts (all resolve paths relative to the script directory, so the package runs on any machine):
+
+| Script | Output figure |
+|:--|:--|
+| `scripts/gen_fig2.py` | `figures/fig2_results.pdf` — manuscript Figure 2 (2x2: operability, standard F1, phase heatmap, activation curves) |
+| `scripts/gen_fig3.py` | `figures/fig3_ablation.pdf` — manuscript Figure 3 (1x3 ablation) |
+| `scripts/gen_esm_fig2.py` | `figures/esm_fig1_scaling_law.pdf` — ESM Figure 1 (scaling law) |
+| `scripts/gen_esm_fig3.py` | `figures/esm_fig2_tcga_validation.pdf` — ESM Figure 2 (TCGA validation) |
+
+Expected total runtime: a few minutes (the figure scripts load and fit the recorded 80-configuration sweep results; no re-training required).
 
 ---
 
@@ -118,9 +113,9 @@ Real cancer transcriptomic data used in this paper comes from the [UCSC Xena Bro
 
 ```bibtex
 @article{gao2026ct,
-  title={Causal Transformer: Scaling Gradient-Based Causal Discovery to 500 Variables},
-  author={Anonymous},
-  journal={Scientific Reports},
+  title={Causal Transformer: Scaling Gradient-Based Causal Discovery with Self-Attention},
+  author={Shuaidong Gao},
+  journal={Current Science},
   year={2026},
   note={Submitted}
 }
