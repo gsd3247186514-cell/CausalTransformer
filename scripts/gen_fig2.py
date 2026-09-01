@@ -35,10 +35,11 @@ os.makedirs(_FIGP, exist_ok=True)
 data = json.load(open(_DATAP))
 
 # best edges per (d, n)
+# Prefer the 10-seed mean (ct_edges_mean) when available, else single-run ct_edges.
 grid = {}
 for k, v in data.items():
     key = (v['d'], v['n'])
-    e = v['ct_edges']
+    e = v['ct_edges_mean'] if (v.get('n_seeds', 1) >= 10 and v.get('ct_edges_mean') is not None) else v['ct_edges']
     if key not in grid or e > grid[key]:
         grid[key] = e
 

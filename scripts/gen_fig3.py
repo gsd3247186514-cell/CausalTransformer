@@ -1,7 +1,5 @@
 """Fig 3: CT ablation study at d=200, n=1000 (3 panels).
-
-Reads the real sweep results from ../data/ct_results.json (resolved relative to
-this script) and the unified palette (_ct_palette.py), so it runs on any machine.
+Uses real data from D:/NO.1/_nightly/ct_results.json. Unified palette.
 y-axis labeled with the paper's operability language (raw non-zero edges).
 """
 import os, sys, json, numpy as np
@@ -25,12 +23,20 @@ os.makedirs(_FIGP, exist_ok=True)
 data = json.load(open(_DATAP))
 
 # Collect d=200, n=1000 configs
+# Prefer the 10-seed mean (ct_edges_mean) when available, else fall back to single run.
 configs = {}
 for k, v in data.items():
     if v['d'] == 200 and v['n'] == 1000:
         dm = v['kwargs']['d_model']; nh = v['kwargs']['n_heads']; ne = v['kwargs']['n_epochs']
-        configs[k] = {'d_model': dm, 'n_heads': nh, 'n_epochs': ne, 'edges': v['ct_edges']}
-        print(f'{k:32s} edges={v["ct_edges"]:8.1f}  dm={dm}  nh={nh}  ne={ne}')
+        if v.get('n_seeds', 1) >= 10 and v.get('ct_edges_mean') is not None:
+            edges = v['ct_edges_mean']
+            src = '10seed'
+        else:
+            edges = v['ct_edges']
+            src = 'single'
+        configs[k] = {'d_model': dm, 'n_heads': nh, 'n_epochs': ne,
+                      'edges': edges, 'src': src}
+        print(f'{k:32s} edges={edges:8.1f} ({src})  dm={dm}  nh={nh}  ne={ne}')
 
 def get(dm, nh, ne):
     for v in configs.values():
